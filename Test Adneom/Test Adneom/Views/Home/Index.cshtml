@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="~/Scripts/jquery-1.10.2.js"></script>
+</head>
+<body>
+    <div class="container jumbotron">
+        <div id="home" class="row">
+
+            <form id="formFindUser">
+                <label>Enter the Id of your Badge</label>
+                <div class="form-inline">
+                    <input type="text" id="idUser" class="form-control" placeholder="Search...">
+                    <button class="btn btn-primary" type="submit">My last selection</button>
+                </div>
+            </form>
+            <hr />
+            <div class="col">
+                <button id="btnNewUser" class="btn btn-primary">I'm a new user</button>
+            </div>
+
+        </div>
+        <div class="row">
+            <button id="btnUpdate" class="btn btn-primary">Change</button>
+        </div>
+        <div class="row">
+            <form id="formSaveUser">
+                <h4>Make your choice :</h4>
+                <div class="form-group">
+                    <label>Drink</label>
+                    <select class="form-control" id="boisson">
+                        <option value="chocolat">chocolat</option>
+                        <option value="café">Coffe</option>
+                        <option value="Thé">Tea</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" class="form-check-input" id="mug">
+                    <label>Mug</label>
+                </div>
+
+                <div class="form-group">
+                    <label>Sugar level</label>
+                    <select class="form-control" id="sucre">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+
+                <input id="idUser" type="hidden" value="0" />
+                <button class="btn btn-primary">Validate</button>
+            </form>
+        </div>
+    </div>
+    
+</body>
+</html>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        var userInfo = { id: 0, Boisson: "", WithMug: "", QuantiteSucre: "" };
+        $('#home').css("display", "block");
+        $('#btnUpdate').parent().css("display", "none");
+        $('#formSaveUser').css("display", "none");
+        $('.table').remove();
+
+        $('#btnUpdate').click(function () {
+            $('#formSaveUser').css("display", "block");
+            $('#home').css("display", "none");
+            $('#btnUpdate').parent().css("display", "none");
+            $('.table').remove();
+            $("#boisson").val(userInfo.Boisson);
+            userInfo.WithMug === true ?
+                $("#mug").prop('checked', true) :
+                $("#mug").prop('checked', false);
+            $("#sucre").val(userInfo.QuantiteSucre);
+            
+            console.log(userInfo);
+        });
+
+        $('#btnNewUser').click(function () {
+            userInfo.Id = 0;
+            $('#home').css("display", "none");
+            $('#formSaveUser').css("display", "block");
+        });
+
+        $('#formSaveUser').submit(function (e) {
+            e.preventDefault();
+            
+            var value = {
+                Boisson: $("#boisson").find(":selected").text(),
+                WithMug: $("#mug").is(":checked"),
+                QuantiteSucre: $("#sucre").find(":selected").text()
+            }
+
+            if (userInfo.Id === 0) {
+                $.ajax({
+                    url: 'http://localhost:57065/api/Utilisateur',
+                    method: 'POST',
+                    data: value
+                })
+                .done(function (result) {
+                    bootbox.alert('Take your drink. This choice is registred your badge Id is: ' + result.Id);
+                    $('#home').css("display", "block");
+                    $('#formSaveUser').css("display", "none");
+                    $("#boisson").val('');
+                    $("#mug").val('');
+                    $("#sucre").val('');
+                })
+                .fail(function () {
+                    console.log('Post failed')
+                })
+            }
+            else {
+                $.ajax({
+                    url: 'http://localhost:57065/api/Utilisateur/' + userInfo.Id,
+                    method: 'PUT',
+                    data: value
+                })
+                .done(function (result) {
+                    console.log(result);
+                    bootbox.alert('Take your drink. Your last selection is updated');
+                    $('#home').css("display", "block");
+                    $('#formSaveUser').css("display", "none");
+                    $("#boisson").val('');
+                    $("#mug").val('');
+                    $("#sucre").val('');
+                })
+                .fail(function () {
+                    console.log('update failed');
+                })
+            }
+        });
+
+        $('#formFindUser').submit(function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: 'http://localhost:57065/api/Utilisateur/' + $('#idUser').val(),
+                method: 'GET',
+                datatype: 'json'
+            })
+            .done(function (data) {
+                userInfo = data;
+                var html = `
+                    <table class ="table">
+                    <thead>
+                        <tr>
+                            <th scope="row"></th>
+                            <th scope="row">Drink</th>
+                            <th scope="row">Mug</th>
+                            <th scope="row">Sugar level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="col"></th>
+                            <td>${data.Boisson}</td>
+                            <td>${data.WithMug === true ? 'Yes' : 'No'}</td>
+                            <td>${data.QuantiteSucre}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                `;
+
+                $('#home').after(html);
+                $('#home').css("display", "none");
+                $('#btnUpdate').parent().css("display", "block");
+                $('#formSaveUser').css("display", "none");
+                $('idUser').val('');
+                $("#boisson").val('');
+                $("#mug").val('');
+                $("#sucre").val('');
+            })
+        });
+
+    });
+
+</script>  
